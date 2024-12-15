@@ -22,11 +22,12 @@ pipeline {
                 // Ensure Maven is installed on the Jenkins environment
                 sh '''#!/bin/bash
 if ! command -v mvn &> /dev/null; then
-    echo "Maven could not be found, please install Maven manually."
+    echo "Maven is not installed. Please install Maven manually or configure Jenkins to install Maven automatically."
     exit 1
 fi
 mvn clean install
-                '''
+'''
+
             }
         }
         stage('Docker Build & Push') {
