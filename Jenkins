@@ -17,7 +17,13 @@ pipeline {
             steps {
                 // Build the Java application (Using Maven in this example)
                 echo 'Building Java Application'
-                sh 'mvn clean install'  // Replace with your build command if you're using Gradle or another tool
+                // Ensure Maven is installed on the Jenkins environment
+                sh '''#!/bin/bash
+                if ! command -v mvn &> /dev/null; then
+                    echo "Maven could not be found, installing Maven..."
+                    brew install maven
+                fi
+                mvn clean install'''  // Maven build command
             }
         }
         stage('Docker Build & Push') {
