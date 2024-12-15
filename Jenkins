@@ -4,7 +4,7 @@ pipeline {
         // Set environment variables for OpenShift
         OPENSHIFT_PROJECT = "sindhupsvn13-dev"  // Set your OpenShift project name
         OPENSHIFT_URL = "https://api.sandbox-m2.ll9k.p1.openshiftapps.com:6443"  // OpenShift API URL
-        OPENSHIFT_TOKEN = credentials('OPENSHIFT_TOKEN')  // Use Jenkins credentials for security
+        OPENSHIFT_TOKEN = sha256~gJ3Vbs0Hp9dP8lX0foKupsPawZwWAqzw-_oo_LvL95Y  // Use Jenkins credentials for security
         DOCKER_IMAGE_NAME = "missing-number-app"  // The name of your Docker image
         DOCKER_REGISTRY = "docker.io/sindhu138"  // Your Docker registry username (Docker Hub)
     }
