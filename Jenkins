@@ -4,9 +4,13 @@ pipeline {
         // Set environment variables for OpenShift
         OPENSHIFT_PROJECT = "sindhupsvn13-dev"  // Set your OpenShift project name
         OPENSHIFT_URL = "https://api.sandbox-m2.ll9k.p1.openshiftapps.com:6443"  // OpenShift API URL
-        OPENSHIFT_TOKEN = "sha256~_AjwPkp7mP7sYcsBmJNQglqbovH8QOGymcaZsDHsZus"  // Replace with your OpenShift access token
+        OPENSHIFT_TOKEN = credentials('OPENSHIFT_TOKEN')  // Use Jenkins credentials for security
         DOCKER_IMAGE_NAME = "missing-number-app"  // The name of your Docker image
         DOCKER_REGISTRY = "docker.io/sindhu138"  // Your Docker registry username (Docker Hub)
+    }
+    tools {
+        // Ensure Maven is available
+        maven 'Maven'  // Reference the Maven installation in Jenkins' global tool configuration
     }
     stages {
         stage('Checkout') {
@@ -19,37 +23,46 @@ pipeline {
             steps {
                 // Build the Java application (Using Maven in this example)
                 echo 'Building Java Application'
-                // Ensure Maven is installed on the Jenkins environment
-                sh '''#!/bin/bash
-if ! command -v mvn &> /dev/null; then
-    echo "Maven is not installed. Please install Maven manually or configure Jenkins to install Maven automatically."
-    exit 1
-fi
-mvn clean install
-'''
-
+                sh 'mvn clean install'  // Simply run Maven clean install
             }
         }
         stage('Docker Build & Push') {
             steps {
                 // Build the Docker image and push it to a Docker registry
                 echo 'Building Docker Image'
-                sh '''
-                docker build -t $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME .
-                docker push $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME
-                '''
+                script {
+                    // Ensure Docker is available
+                    sh 'docker --version'  // Check Docker version
+                    sh '''
+                    docker build -t $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME .
+                    docker login --username $DOCKER_REGISTRY --password $DOCKER_PASSWORD
+                    docker push $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME
+                    '''
+                }
             }
         }
         stage('Deploy to OpenShift') {
             steps {
                 // Deploy the application to OpenShift
                 echo 'Deploying to OpenShift'
-                sh '''
-                oc login https://api.sandbox-m2.ll9k.p1.openshiftapps.com:6443 --token=$OPENSHIFT_TOKEN
-                oc project $OPENSHIFT_PROJECT
-                oc new-app $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME
-                '''
+                script {
+                    // Ensure oc CLI is available
+                    sh 'oc version'  // Check OpenShift CLI version
+                    sh '''
+                    oc login $OPENSHIFT_URL --token=$OPENSHIFT_TOKEN
+                    oc project $OPENSHIFT_PROJECT
+                    oc new-app $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME
+                    '''
+                }
             }
+        }
+    }
+    post {
+        success {
+            echo 'Pipeline successfully completed.'
+        }
+        failure {
+            echo 'Pipeline failed. Please check the logs for details.'
         }
     }
 }
