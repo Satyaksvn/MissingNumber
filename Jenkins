@@ -5,6 +5,8 @@ pipeline {
         OPENSHIFT_PROJECT = "sindhupsvn13-dev"  // Set your OpenShift project name
         OPENSHIFT_URL = "https://api.sandbox-m2.ll9k.p1.openshiftapps.com:6443"  // OpenShift API URL
         OPENSHIFT_TOKEN = "sha256~_AjwPkp7mP7sYcsBmJNQglqbovH8QOGymcaZsDHsZus"  // Replace with your OpenShift access token
+        DOCKER_IMAGE_NAME = "missing-number-app"  // The name of your Docker image
+        DOCKER_REGISTRY = "docker.io/sindhu138"  // Your Docker registry username (Docker Hub)
     }
     stages {
         stage('Checkout') {
@@ -19,11 +21,12 @@ pipeline {
                 echo 'Building Java Application'
                 // Ensure Maven is installed on the Jenkins environment
                 sh '''#!/bin/bash
-                if ! command -v mvn &> /dev/null; then
-                    echo "Maven could not be found, installing Maven..."
-                    brew install maven
-                fi
-                mvn clean install'''  // Maven build command
+if ! command -v mvn &> /dev/null; then
+    echo "Maven could not be found, please install Maven manually."
+    exit 1
+fi
+mvn clean install
+                '''
             }
         }
         stage('Docker Build & Push') {
@@ -31,8 +34,8 @@ pipeline {
                 // Build the Docker image and push it to a Docker registry
                 echo 'Building Docker Image'
                 sh '''
-                docker build -t <docker-image-name> .
-                docker push <docker-registry>/<docker-image-name>
+                docker build -t $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME .
+                docker push $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME
                 '''
             }
         }
@@ -43,7 +46,7 @@ pipeline {
                 sh '''
                 oc login https://api.sandbox-m2.ll9k.p1.openshiftapps.com:6443 --token=$OPENSHIFT_TOKEN
                 oc project $OPENSHIFT_PROJECT
-                oc new-app <docker-registry>/<docker-image-name>
+                oc new-app $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME
                 '''
             }
         }
