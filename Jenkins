@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+    environment {
+        // Set environment variables for OpenShift
+        OPENSHIFT_PROJECT = "sindhupsvn13-dev"  // Set your OpenShift project name
+        OPENSHIFT_URL = "https://api.sandbox-m2.ll9k.p1.openshiftapps.com:6443"  // OpenShift API URL
+        OPENSHIFT_TOKEN = "sha256~_AjwPkp7mP7sYcsBmJNQglqbovH8QOGymcaZsDHsZus"  // Replace with your OpenShift access token
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the code from Git repository
+                git url: 'https://github.com/Satyaksvn/MissingNumber', branch: 'master'
+            }
+        }
+        stage('Build') {
+            steps {
+                // Build the Java application (Using Maven in this example)
+                echo 'Building Java Application'
+                sh 'mvn clean install'  // Replace with your build command if you're using Gradle or another tool
+            }
+        }
+        stage('Docker Build & Push') {
+            steps {
+                // Build the Docker image and push it to a Docker registry
+                echo 'Building Docker Image'
+                sh '''
+                docker build -t <docker-image-name> .
+                docker push <docker-registry>/<docker-image-name>
+                '''
+            }
+        }
+        stage('Deploy to OpenShift') {
+            steps {
+                // Deploy the application to OpenShift
+                echo 'Deploying to OpenShift'
+                sh '''
+                oc login https://api.sandbox-m2.ll9k.p1.openshiftapps.com:6443 --token=$OPENSHIFT_TOKEN
+                oc project $OPENSHIFT_PROJECT
+                oc new-app <docker-registry>/<docker-image-name>
+                '''
+            }
+        }
+    }
+}
